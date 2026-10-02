@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Tap Sentry</string>
+    <string name="accessibility_description">Tap Sentry uses accessibility gestures only when you start a saved automation. It never reads or uploads screen content.</string>
+</resources>
