@@ -8,6 +8,7 @@ import android.graphics.drawable.GradientDrawable
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.core.app.NotificationCompat
@@ -23,7 +24,12 @@ class OverlayService:Service() {
     override fun onBind(intent:Intent?):IBinder?=null
     override fun onCreate(){super.onCreate();wm=getSystemService(WindowManager::class.java);channel();startForeground(7,NotificationCompat.Builder(this,"automation").setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("Tap Sentry is ready").setContentText("Overlay automation controls are active").setOngoing(true).build())}
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int {
-        when(intent?.action){ACTION_STOP->{AutomationEngine.stop();stopSelf();return START_NOT_STICKY}}
+        if (intent == null) {
+            Log.w("TapSentryOverlay", "Ignoring service start without an intent")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        when(intent.action){ACTION_STOP->{AutomationEngine.stop();stopSelf();return START_NOT_STICKY}}
         profile=runCatching{json.decodeFromString<AutomationProfile>(intent?.getStringExtra(EXTRA_PROFILE)?:"")}.getOrElse{stopSelf();return START_NOT_STICKY}
         showPanel(); AutomationEngine.onClick={x,y->showIndicator(x,y)};AutomationEngine.onMessage={msg->panel?.findViewById<TextView>(100)?.text=msg}
         val result=intent.getIntExtra(EXTRA_RESULT,Activity.RESULT_CANCELED);val data=if(Build.VERSION.SDK_INT>=33)intent.getParcelableExtra(EXTRA_DATA,Intent::class.java)else @Suppress("DEPRECATION") intent.getParcelableExtra(EXTRA_DATA)

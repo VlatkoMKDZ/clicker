@@ -34,7 +34,7 @@ import kotlinx.serialization.json.Json
 
 class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{TapSentryTheme{App()}}}}
 
-@Composable private fun TapSentryTheme(content:@Composable()->Unit){MaterialTheme(colorScheme=if(androidx.compose.foundation.isSystemInDarkTheme())darkColorScheme(primary=Color(0xFFD0BCFF))else lightColorScheme(primary=Color(0xFF6750A4)),content=content)}
+@Composable private fun TapSentryTheme(content: @Composable () -> Unit){MaterialTheme(colorScheme=if(androidx.compose.foundation.isSystemInDarkTheme())darkColorScheme(primary=Color(0xFFD0BCFF))else lightColorScheme(primary=Color(0xFF6750A4)),content=content)}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable fun App(){
@@ -62,7 +62,7 @@ class MainActivity:ComponentActivity(){override fun onCreate(savedInstanceState:
         item{Text("PROFILE / SCRIPT",style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.primary);Row(verticalAlignment=Alignment.CenterVertically){Box(Modifier.weight(1f)){var open by remember{mutableStateOf(false)};OutlinedButton({open=true},Modifier.fillMaxWidth()){Text(p.name);Icon(Icons.Default.ArrowDropDown,null)};DropdownMenu(open,{open=false}){all.forEachIndexed{i,v->DropdownMenuItem({Text(v.name)},{onSelected(i);open=false})}}};IconButton({onProfiles(all+AutomationProfile(name="Profile ${all.size+1}"))}){Icon(Icons.Default.Add,"Create")};IconButton({onProfiles(all+p.copy(id=java.util.UUID.randomUUID().toString(),name=p.name+" copy"))}){Icon(Icons.Default.ContentCopy,"Duplicate")};IconButton({if(all.size>1)onProfiles(all.filterIndexed{i,_->i!=selected})}){Icon(Icons.Default.Delete,"Delete")}};OutlinedTextField(p.name,{onUpdate(p.copy(name=it))},label={Text("Profile name")},singleLine=true,modifier=Modifier.fillMaxWidth())}
         item{PermissionCard()}
         item{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){Text("ACTION SEQUENCE",style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.primary);Row{IconButton({onUpdate(p.copy(actions=p.actions+MacroAction.Tap()))}){Icon(Icons.Default.TouchApp,"Add tap")};IconButton({onUpdate(p.copy(actions=p.actions+MacroAction.Wait()))}){Icon(Icons.Default.Timer,"Add wait")};IconButton({onUpdate(p.copy(actions=p.actions+MacroAction.Swipe()))}){Icon(Icons.Default.Swipe,"Add swipe")}}}}
-        itemsIndexed(p.actions){i,a->ActionCard(i,a,{updated->onUpdate(p.copy(actions=p.actions.toMutableList().also{it[i]=updated}))},{if(i>0)onUpdate(p.copy(actions=p.actions.toMutableList().also{val x=removeAt(i);add(i-1,x)}))},{onUpdate(p.copy(actions=p.actions.filterIndexed{j,_->j!=i}))})}
+        itemsIndexed(p.actions){i,a->ActionCard(i,a,{updated->onUpdate(p.copy(actions=p.actions.toMutableList().also{it[i]=updated}))},{if(i>0)onUpdate(p.copy(actions=p.actions.toMutableList().also{val x=it.removeAt(i);it.add(i-1,x)}))},{onUpdate(p.copy(actions=p.actions.filterIndexed{j,_->j!=i}))})}
         item{VisualCard(p,onUpdate)}
         item{Button(onStart,Modifier.fillMaxWidth().height(56.dp)){Icon(Icons.Default.OpenInNew,null);Spacer(Modifier.width(8.dp));Text("Launch floating controls")};Text("Tap Sentry will move behind the target app. Position markers using normalized coordinates.",style=MaterialTheme.typography.bodySmall)}
     }

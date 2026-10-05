@@ -4,7 +4,7 @@ Tap Sentry is a local-first Android 7+ gesture automation tool. It combines acce
 
 ## Build with GitHub Actions
 
-Open the repository's **Actions** tab and select **Build Android APKs**. Builds run automatically for pushes to `main` and `codex/**` branches and for pull requests targeting `main`. After this workflow is merged into `main`, you can also select **Run workflow** to build a chosen branch manually.
+Open the repository's **Actions** tab and select **Build Android APKs**. Builds run automatically for pushes to `main` and for pull requests targeting `main`. After this workflow is merged into `main`, you can also select **Run workflow** to build a chosen branch manually.
 
 Each successful run executes the unit tests and Android lint, then provides these downloadable artifacts:
 
