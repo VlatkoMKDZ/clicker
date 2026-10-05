@@ -1,0 +1,94 @@
+name: Build Android APKs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Test, lint, and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+
+      - name: Install Android build packages
+        run: sdkmanager 'platforms;android-35' 'build-tools;34.0.0' 'build-tools;35.0.0'
+
+      - name: Set up Gradle 8.10.2
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      # The repository intentionally omits gradle-wrapper.jar. The setup action
+      # installs the exact version declared by the wrapper properties.
+      - name: Run tests, lint, and build installable APKs
+        run: gradle --no-daemon --stacktrace --console=plain --continue testDebugUnitTest lintDebug assembleDebug assembleRelease
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TapSentry-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload release test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TapSentry-release-test-${{ github.run_number }}
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload test and lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TapSentry-reports-${{ github.run_number }}
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Write build summary
+        if: success()
+        run: |
+          {
+            echo '### Tap Sentry APKs are ready'
+            echo ''
+            echo 'Download an APK ZIP from the Artifacts section of this run and extract it before installing.'
+            echo ''
+            echo '- Debug APK: dev.tapsentry.debug (can coexist with the release app).'
+            echo '- Release test APK: dev.tapsentry (uses the Android debug signing key; not a distribution release).'
+            echo '- Both APKs require Android 7.0 or later.'
+            echo ''
+            echo 'Enable Display over other apps and Tap Sentry in Accessibility after installation.'
+          } >> "$GITHUB_STEP_SUMMARY"

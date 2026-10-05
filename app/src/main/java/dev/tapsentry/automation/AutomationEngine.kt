@@ -1,6 +1,9 @@
 package dev.tapsentry.automation
 
 import android.content.Context
+import android.graphics.Rect
+import android.os.Build
+import android.util.DisplayMetrics
 import android.view.WindowManager
 import dev.tapsentry.accessibility.TapAccessibilityService
 import dev.tapsentry.model.*
@@ -18,7 +21,15 @@ object AutomationEngine {
     @Volatile private var additional=-1
     fun start(context:Context,p:AutomationProfile) {
         if(job?.isActive==true)return; profile=p; additional=-1
-        val bounds=context.getSystemService(WindowManager::class.java).currentWindowMetrics.bounds
+        val windowManager = context.getSystemService(WindowManager::class.java)
+        val bounds = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            windowManager.currentWindowMetrics.bounds
+        } else {
+            val metrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(metrics)
+            Rect(0, 0, metrics.widthPixels, metrics.heightPixels)
+        }
         job=scope.launch { try {
             _state.value=SessionState.STARTING; delay(p.startDelayMs); _state.value=SessionState.RUNNING
             var index=0

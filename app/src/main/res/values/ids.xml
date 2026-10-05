@@ -1,0 +1,4 @@
+<resources>
+    <item name="controller_panel" type="id" />
+    <item name="automation_status" type="id" />
+</resources>

@@ -8,6 +8,7 @@ import android.graphics.drawable.GradientDrawable
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import android.view.*
 import android.widget.*
 import androidx.core.app.NotificationCompat
@@ -23,16 +24,21 @@ class OverlayService:Service() {
     override fun onBind(intent:Intent?):IBinder?=null
     override fun onCreate(){super.onCreate();wm=getSystemService(WindowManager::class.java);channel();startForeground(7,NotificationCompat.Builder(this,"automation").setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle("Tap Sentry is ready").setContentText("Overlay automation controls are active").setOngoing(true).build())}
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int {
-        when(intent?.action){ACTION_STOP->{AutomationEngine.stop();stopSelf();return START_NOT_STICKY}}
+        if (intent == null) {
+            Log.w("TapSentryOverlay", "Ignoring service start without an intent")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        when(intent.action){ACTION_STOP->{AutomationEngine.stop();stopSelf();return START_NOT_STICKY}}
         profile=runCatching{json.decodeFromString<AutomationProfile>(intent?.getStringExtra(EXTRA_PROFILE)?:"")}.getOrElse{stopSelf();return START_NOT_STICKY}
-        showPanel(); AutomationEngine.onClick={x,y->showIndicator(x,y)};AutomationEngine.onMessage={msg->panel?.findViewById<TextView>(100)?.text=msg}
+        showPanel(); AutomationEngine.onClick={x,y->showIndicator(x,y)};AutomationEngine.onMessage={msg->panel?.findViewById<TextView>(R.id.automation_status)?.text=msg}
         val result=intent.getIntExtra(EXTRA_RESULT,Activity.RESULT_CANCELED);val data=if(Build.VERSION.SDK_INT>=33)intent.getParcelableExtra(EXTRA_DATA,Intent::class.java)else @Suppress("DEPRECATION") intent.getParcelableExtra(EXTRA_DATA)
         if(profile.detection.enabled&&result==Activity.RESULT_OK&&data!=null){val metrics=resources.displayMetrics; val projection=getSystemService(MediaProjectionManager::class.java).getMediaProjection(result,data);detector=VisualDetectionEngine(projection,metrics.widthPixels,metrics.heightPixels,metrics.densityDpi,profile.detection)}
         AutomationEngine.start(this,profile);return START_NOT_STICKY
     }
     private fun showPanel(){if(panel!=null)return
-        val box=LinearLayout(this).apply{id=99;orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(12,8,12,8);background=GradientDrawable().apply{cornerRadius=32f;setColor(0xE6221E2F.toInt());setStroke(2,0xFF6750A4.toInt())}}
-        val status=TextView(this).apply{id=100;text="STARTING";setTextColor(Color.WHITE);setPadding(8,0,8,0)};box.addView(status)
+        val box=LinearLayout(this).apply{id=R.id.controller_panel;orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL;setPadding(12,8,12,8);background=GradientDrawable().apply{cornerRadius=32f;setColor(0xE6221E2F.toInt());setStroke(2,0xFF6750A4.toInt())}}
+        val status=TextView(this).apply{id=R.id.automation_status;text="STARTING";setTextColor(Color.WHITE);setPadding(8,0,8,0)};box.addView(status)
         fun button(label:String,action:()->Unit)=Button(this).apply{text=label;minWidth=0;minimumWidth=0;setPadding(8,0,8,0);setOnClickListener{action()}}
         box.addView(button("Ⅱ"){AutomationEngine.pause();status.text="PAUSED"});box.addView(button("▶"){AutomationEngine.resume();status.text="RUNNING"});box.addView(button("■"){AutomationEngine.stop();status.text="STOPPED"});box.addView(button("×"){stopSelf()})
         val lp=params(48,100,Gravity.TOP or Gravity.START);var sx=0f;var sy=0f;var ox=0;var oy=0
