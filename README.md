@@ -2,7 +2,21 @@
 
 Tap Sentry is a local-first Android 7+ gesture automation tool. It combines accessibility gestures, a movable floating controller, click indicators, reusable macro profiles, and region-scoped visual auto-stop.
 
-## Build
+## Build with GitHub Actions
+
+Open the repository's **Actions** tab and select **Build Android APKs**. Builds run automatically for pushes to `main` and `codex/**` branches and for pull requests targeting `main`. After this workflow is merged into `main`, you can also select **Run workflow** to build a chosen branch manually.
+
+Each successful run executes the unit tests and Android lint, then provides these downloadable artifacts:
+
+- `TapSentry-debug-<run number>`: extract the ZIP and install `app-debug.apk`. Its application ID is `dev.tapsentry.debug`.
+- `TapSentry-release-test-<run number>`: extract the ZIP and install `app-release.apk`. Its application ID is `dev.tapsentry`. This is a release-mode test build signed with Android's debug key, not a distribution-signed release.
+- `TapSentry-reports-<run number>`: unit-test and lint reports, uploaded even when checks fail if reports were generated.
+
+APK artifacts are kept for 30 days; reports are kept for 14 days. These are GitHub Actions artifacts, not GitHub Releases. Hosted runners can generate different debug signing keys, so updating a previous test installation may require uninstalling it first (which removes local profiles). Use a stable external release key for distribution and reliable updates.
+
+GitHub installs Java 17, Android SDK 35, and Gradle 8.10.2 for you. No local Android Studio installation or signing secrets are needed for these test APKs.
+
+## Build locally
 
 1. Install Android SDK Platform 35 and Build Tools 35.
 2. Set `ANDROID_HOME` (or create `local.properties` with `sdk.dir=...`).
